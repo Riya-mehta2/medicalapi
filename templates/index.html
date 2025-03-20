@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumonia Detection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: 50px auto;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        #drop-area {
+            border: 2px dashed #007bff;
+            padding: 30px;
+            margin: 20px 0;
+            background: #f9f9f9;
+            cursor: pointer;
+        }
+        #drop-area.highlight {
+            background: #e0f7fa;
+        }
+        #file-input {
+            display: none;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Pneumonia Detection</h2>
+        
+        <div id="drop-area">
+            <p>Drag & Drop an X-ray image here or <label for="file-input" style="color: #007bff; cursor: pointer;">click to select</label></p>
+            <input type="file" id="file-input" accept="image/*">
+        </div>
+
+        <button onclick="uploadImage()">Analyze X-ray</button>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        let fileInput = document.getElementById("file-input");
+        let dropArea = document.getElementById("drop-area");
+
+        dropArea.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropArea.classList.add("highlight");
+        });
+
+        dropArea.addEventListener("dragleave", () => {
+            dropArea.classList.remove("highlight");
+        });
+
+        dropArea.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropArea.classList.remove("highlight");
+            fileInput.files = e.dataTransfer.files;
+        });
+
+        function uploadImage() {
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select an image.");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/predict", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById("result").innerHTML = `<p style="color:red;">Error: ${data.error}</p>`;
+                } else {
+                    document.getElementById("result").innerHTML = `
+                        <p><strong>Prediction:</strong> ${data.prediction}</p>
+                        <p><strong>Confidence:</strong> ${(data.confidence * 100).toFixed(2)}%</p>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById("result").innerHTML = `<p style="color:red;">Failed to process image.</p>`;
+            });
+        }
+    </script>
+
+</body>
+</html>
